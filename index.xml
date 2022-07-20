@@ -2,9 +2,9 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>ZimmerWen</title>
-    <link>http://zimmerwen.github.io/</link>
+    <link>/</link>
     <description>Recent content on ZimmerWen</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>zh-CN</language><atom:link href="http://zimmerwen.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <language>zh-CN</language><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>
