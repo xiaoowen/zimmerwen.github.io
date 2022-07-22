@@ -9,10 +9,10 @@
     <lastBuildDate>Wed, 20 Jul 2022 14:18:00 +0800</lastBuildDate><atom:link href="/tags/design-pattern/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Golang中应用Functional Options模式</title>
-      <link>/posts/golang%E4%B8%AD%E5%BA%94%E7%94%A8functional-options/</link>
+      <link>/posts/golang-%E4%B8%AD%E5%BA%94%E7%94%A8-functional-options/</link>
       <pubDate>Wed, 20 Jul 2022 14:18:00 +0800</pubDate>
       
-      <guid>/posts/golang%E4%B8%AD%E5%BA%94%E7%94%A8functional-options/</guid>
+      <guid>/posts/golang-%E4%B8%AD%E5%BA%94%E7%94%A8-functional-options/</guid>
       <description>Functional Options 是一个函数式编程的应用案例，编程技巧也很好，是目前在go语言中最流行的一种编程模式。在grpc的源码中有大量的应用。
 要解决什么问题 配置选项问题 在编程中，我们会经常需要对一个对象进行相关的配置，比如：
 type Server struct {  Addr string  Port int  Protocol string  Timeout time.Duration  MaxConns int  TLS *tls.Config } 在这个Server对象中，我们可以看到：

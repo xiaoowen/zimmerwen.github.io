@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="not-ready text-sm lg:text-base" lang="zh-CN">
+  <head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+  
+  <title>Golang中应用Functional Options模式 - ZimmerWen</title>
+
+  
+  <meta name="theme-color" />
+  
+  <meta name="description" content="Functional Options 是一个函数式编程的应用案例，编程技巧也很好，是目前在go语言中最流行的一种编程模式。在grpc的源码中有大量的应用。
+要解决什么问题 配置选项问题 在编程中，我们会经常需要对一个对象进行相关的配置，比如：
+type Server struct {  Addr string  Port int  Protocol string  Timeout time.Duration  MaxConns int  TLS *tls.Config } 在这个Server对象中，我们可以看到：
+ 要有监听的ip地址 addr 和端口号 Port，这两个配置选项是必须的 还有 Protocol、 Timeout、 MaxConns 字段，这几个字短是不能为空的，但有默认值：协议是tcp，超时时间30秒和最大连结束1024个 还有 TLS 这个是安全链接，需要配置相关的证书和私钥。这个是可以为空的  所以，针对与上述这样的配置，因为go语言不支持重载函数，所以不得不用不同的函数来应对不同的配置创建Server的函数，如：
+func NewDefaultServer(addr string, port int) (*Server, error) {  return &amp;Server{  Addr: addr, Port: port,  Protocol: &#34;tcp&#34;, Timeout: 30*time.Second, MaxConns: 1024  TLS: nil  }, nil }  func NewTLSServer(addr string, port int, tlsConf *tls." />
+  <meta name="author" content="" />
+  
+
+  
+  
+  
+  
+  
+  
+  <link rel="preload stylesheet" as="style" href="/main.min.css" />
+
+  
+  <script
+    defer
+    src="/highlight.min.js"
+    onload="hljs.initHighlightingOnLoad();"
+  ></script>
+  
+
+  
+  <link
+    rel="preload"
+    as="image"
+    href="/theme.%7B%7B%20if%20site.Params.monoDarkIcon%20%7D%7Dsvg%7B%7B%20else%20%7D%7Dpng%7B%7B%20end%20%7D%7D"
+  />
+
+  
+  
+  
+  
+
+  
+
+  
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  
+  <meta name="generator" content="Hugo 0.97.3" />
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <meta property="og:title" content="Golang中应用Functional Options模式" />
+<meta property="og:description" content="Functional Options 是一个函数式编程的应用案例，编程技巧也很好，是目前在go语言中最流行的一种编程模式。在grpc的源码中有大量的应用。
+要解决什么问题 配置选项问题 在编程中，我们会经常需要对一个对象进行相关的配置，比如：
+type Server struct {  Addr string  Port int  Protocol string  Timeout time.Duration  MaxConns int  TLS *tls.Config } 在这个Server对象中，我们可以看到：
+ 要有监听的ip地址 addr 和端口号 Port，这两个配置选项是必须的 还有 Protocol、 Timeout、 MaxConns 字段，这几个字短是不能为空的，但有默认值：协议是tcp，超时时间30秒和最大连结束1024个 还有 TLS 这个是安全链接，需要配置相关的证书和私钥。这个是可以为空的  所以，针对与上述这样的配置，因为go语言不支持重载函数，所以不得不用不同的函数来应对不同的配置创建Server的函数，如：
+func NewDefaultServer(addr string, port int) (*Server, error) {  return &amp;Server{  Addr: addr, Port: port,  Protocol: &#34;tcp&#34;, Timeout: 30*time.Second, MaxConns: 1024  TLS: nil  }, nil }  func NewTLSServer(addr string, port int, tlsConf *tls." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/posts/golang-%E4%B8%AD%E5%BA%94%E7%94%A8-functional-options/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-07-20T14:18:00+08:00" />
+<meta property="article:modified_time" content="2022-07-20T14:18:00+08:00" />
+
+
+  
+  <meta itemprop="name" content="Golang中应用Functional Options模式">
+<meta itemprop="description" content="Functional Options 是一个函数式编程的应用案例，编程技巧也很好，是目前在go语言中最流行的一种编程模式。在grpc的源码中有大量的应用。
+要解决什么问题 配置选项问题 在编程中，我们会经常需要对一个对象进行相关的配置，比如：
+type Server struct {  Addr string  Port int  Protocol string  Timeout time.Duration  MaxConns int  TLS *tls.Config } 在这个Server对象中，我们可以看到：
+ 要有监听的ip地址 addr 和端口号 Port，这两个配置选项是必须的 还有 Protocol、 Timeout、 MaxConns 字段，这几个字短是不能为空的，但有默认值：协议是tcp，超时时间30秒和最大连结束1024个 还有 TLS 这个是安全链接，需要配置相关的证书和私钥。这个是可以为空的  所以，针对与上述这样的配置，因为go语言不支持重载函数，所以不得不用不同的函数来应对不同的配置创建Server的函数，如：
+func NewDefaultServer(addr string, port int) (*Server, error) {  return &amp;Server{  Addr: addr, Port: port,  Protocol: &#34;tcp&#34;, Timeout: 30*time.Second, MaxConns: 1024  TLS: nil  }, nil }  func NewTLSServer(addr string, port int, tlsConf *tls."><meta itemprop="datePublished" content="2022-07-20T14:18:00+08:00" />
+<meta itemprop="dateModified" content="2022-07-20T14:18:00+08:00" />
+<meta itemprop="wordCount" content="441">
+<meta itemprop="keywords" content="golang,design pattern," />
+  
+  <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Golang中应用Functional Options模式"/>
+<meta name="twitter:description" content="Functional Options 是一个函数式编程的应用案例，编程技巧也很好，是目前在go语言中最流行的一种编程模式。在grpc的源码中有大量的应用。
+要解决什么问题 配置选项问题 在编程中，我们会经常需要对一个对象进行相关的配置，比如：
+type Server struct {  Addr string  Port int  Protocol string  Timeout time.Duration  MaxConns int  TLS *tls.Config } 在这个Server对象中，我们可以看到：
+ 要有监听的ip地址 addr 和端口号 Port，这两个配置选项是必须的 还有 Protocol、 Timeout、 MaxConns 字段，这几个字短是不能为空的，但有默认值：协议是tcp，超时时间30秒和最大连结束1024个 还有 TLS 这个是安全链接，需要配置相关的证书和私钥。这个是可以为空的  所以，针对与上述这样的配置，因为go语言不支持重载函数，所以不得不用不同的函数来应对不同的配置创建Server的函数，如：
+func NewDefaultServer(addr string, port int) (*Server, error) {  return &amp;Server{  Addr: addr, Port: port,  Protocol: &#34;tcp&#34;, Timeout: 30*time.Second, MaxConns: 1024  TLS: nil  }, nil }  func NewTLSServer(addr string, port int, tlsConf *tls."/>
+
+  
+  
+</head>
+
+  <body class="text-black duration-200 ease-out dark:text-white">
+    <header class="mx-auto flex h-[5rem] max-w-3xl px-8 lg:justify-center">
+  <div class="relative z-50 mr-auto flex items-center">
+    <a class="-translate-x-[1px] -translate-y-0.5 text-3xl font-bold" href="/"
+      >ZimmerWen</a
+    >
+    <a
+      class="btn-dark ml-6 h-6 w-6 shrink-0 cursor-pointer [background:url(./theme.png)_left_center/_auto_theme('spacing.6')_no-repeat] [transition:_background-position_0.4s_steps(5)] dark:[background-position:right]"
+    ></a>
+  </div>
+
+  <a
+    class="btn-menu relative z-50 -mr-8 flex h-[5rem] w-[5rem] shrink-0 cursor-pointer flex-col items-center justify-center gap-2.5 lg:hidden"
+  ></a>
+
+  <script>
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    const htmlClass = document.documentElement.classList;
+    setTimeout(() => htmlClass.remove('not-ready'), 10);
+
+    const setDark = (newDark) => {
+      metaTheme.setAttribute('content', newDark ? '#000' : '#fbfbfb');
+      htmlClass[newDark ? 'add' : 'remove']('dark');
+      localStorage.setItem('dark', newDark);
+    };
+
+    
+    const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+    const darkVal = localStorage.getItem('dark');
+    setDark(darkVal ? darkVal === 'true' : darkScheme.matches);
+
+    
+    darkScheme.addEventListener('change', (event) => {
+      setDark(event.matches);
+    });
+
+    
+    const btnDark = document.querySelector('.btn-dark');
+    btnDark.addEventListener('click', () => {
+      setDark(localStorage.getItem('dark') !== 'true');
+    });
+
+    
+    const btnMenu = document.querySelector('.btn-menu');
+    btnMenu.addEventListener('click', () => {
+      htmlClass.toggle('open');
+    });
+  </script>
+
+  <div
+    class="nav-wrapper fixed inset-x-0 top-full z-40 flex h-full select-none flex-col justify-center pb-16 duration-200 dark:bg-black lg:static lg:h-auto lg:flex-row lg:!bg-transparent lg:pb-0 lg:transition-none"
+  >
+    
+    
+
+    
+  </div>
+</header>
+
+
+    <main
+      class="prose prose-neutral relative mx-auto min-h-[calc(100%-10rem)] max-w-3xl px-8 pt-20 pb-32 dark:prose-invert"
+    >
+      
+
+<article>
+  <header class="mb-20">
+    <h1 class="!my-0 pb-2">Golang中应用Functional Options模式</h1>
+
+    
+    <div class="text-[0.9em] opacity-70">
+      
+      <time>Jul 20, 2022</time>
+      
+      
+    </div>
+    
+  </header>
+
+  <section><p><code>Functional Options</code> 是一个函数式编程的应用案例，编程技巧也很好，是目前在go语言中最流行的一种编程模式。在grpc的源码中有大量的应用。</p>
+<h3 id="要解决什么问题">要解决什么问题</h3>
+<h4 id="配置选项问题">配置选项问题</h4>
+<p>在编程中，我们会经常需要对一个对象进行相关的配置，比如：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Server</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Addr</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Port</span> <span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Protocol</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Timeout</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">MaxConns</span> <span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">TLS</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>在这个Server对象中，我们可以看到：</p>
+<ul>
+<li>要有监听的ip地址 <code>addr</code> 和端口号 <code>Port</code>，这两个配置选项是必须的</li>
+<li>还有 <code>Protocol</code>、 <code>Timeout</code>、 <code>MaxConns</code> 字段，这几个字短是不能为空的，但有默认值：协议是tcp，超时时间30秒和最大连结束1024个</li>
+<li>还有 <code>TLS</code> 这个是安全链接，需要配置相关的证书和私钥。这个是可以为空的</li>
+</ul>
+<p>所以，针对与上述这样的配置，因为go语言不支持重载函数，所以不得不用不同的函数来应对不同的配置创建Server的函数，如：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewDefaultServer</span>(<span style="color:#a6e22e">addr</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">port</span> <span style="color:#66d9ef">int</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Server</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Addr</span>: <span style="color:#a6e22e">addr</span>, <span style="color:#a6e22e">Port</span>: <span style="color:#a6e22e">port</span>, 
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Protocol</span>: <span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">Timeout</span>: <span style="color:#ae81ff">30</span><span style="color:#f92672">*</span><span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>, <span style="color:#a6e22e">MaxConns</span>: <span style="color:#ae81ff">1024</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">TLS</span>: <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>  }, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewTLSServer</span>(<span style="color:#a6e22e">addr</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">port</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">tlsConf</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Server</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Addr</span>: <span style="color:#a6e22e">addr</span>, <span style="color:#a6e22e">Port</span>: <span style="color:#a6e22e">port</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Protocol</span>: <span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">Timeout</span>: <span style="color:#ae81ff">30</span><span style="color:#f92672">*</span><span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>, <span style="color:#a6e22e">MaxConns</span>: <span style="color:#ae81ff">1024</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">TLS</span>: <span style="color:#a6e22e">tlsConf</span>
+</span></span><span style="display:flex;"><span>  }, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewServerWithTimeout</span>(<span style="color:#a6e22e">addr</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">port</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">timeout</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Server</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Addr</span>: <span style="color:#a6e22e">addr</span>, <span style="color:#a6e22e">Port</span>: <span style="color:#a6e22e">port</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Protocol</span>: <span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">Timeout</span>: <span style="color:#a6e22e">timeout</span>, <span style="color:#a6e22e">MaxConns</span>: <span style="color:#ae81ff">1024</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">TLS</span>: <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>  }, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="如何解决">如何解决</h3>
+<h4 id="配置对象方案">配置对象方案</h4>
+<p>要解决配置选项的问题，最常见的方式是使用一个配置对象，我们把哪些费必需的选项都移动到一个结构体里，于是Server对象变成了：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Server</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Addr</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Port</span> <span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Conf</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Config</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>于是我们只需要一个 <code>NewServer()</code> 的函数，使用前构造 <code>Config</code> 对象即可，如：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewServer</span>(<span style="color:#a6e22e">addr</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">port</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">conf</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Config</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// using the default configuration
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">srv1</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewServer</span>(<span style="color:#e6db74">&#34;localhost&#34;</span>, <span style="color:#ae81ff">9000</span>, <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// with config
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">conf</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Config</span>{<span style="color:#a6e22e">Protocol</span>: <span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">Timeout</span>: <span style="color:#ae81ff">60</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">srv2</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewServer</span>(<span style="color:#e6db74">&#34;localhost&#34;</span>, <span style="color:#ae81ff">9000</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">conf</span>)
+</span></span></code></pre></div><p>这段代码算是很不错了，大多数情况下，我们可能就止步于此了。但是我们可以看到其中有一点不好的是：<code>Config</code> 并不是必须的，所以，需要在 <code>NewServer</code> 中判断是否是 <code>nil</code> 或 <code>empty</code></p>
+<h4 id="builder方案">Builder方案</h4>
+<p>如果熟悉设计模式的话，一定会很自然的使用上 <code>builder</code> 模式。采用这个模式，我们可以把代码改成如下的方式：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ServerBuilder</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Server</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ServerBuilder</span>) <span style="color:#a6e22e">Create</span>(<span style="color:#a6e22e">addr</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">port</span> <span style="color:#66d9ef">int</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">ServerBuilder</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Server</span>.<span style="color:#a6e22e">Addr</span> = <span style="color:#a6e22e">addr</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Server</span>.<span style="color:#a6e22e">Port</span> = <span style="color:#a6e22e">port</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">s</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ServerBuilder</span>) <span style="color:#a6e22e">WithProtocol</span>(<span style="color:#a6e22e">protocol</span> <span style="color:#66d9ef">string</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">ServerBuilder</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Server</span>.<span style="color:#a6e22e">Protocol</span> = <span style="color:#a6e22e">protocol</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">s</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ServerBuilder</span>) <span style="color:#a6e22e">WithTLS</span>(<span style="color:#a6e22e">tlsConf</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">ServerBuilder</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Server</span>.<span style="color:#a6e22e">TLS</span> = <span style="color:#a6e22e">tlsConf</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">s</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ServerBuilder</span>) <span style="color:#a6e22e">Build</span>() <span style="color:#a6e22e">Server</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Server</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>现在我们就可以用下面的方式使用：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">sb</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ServerBuilder</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sb</span>.<span style="color:#a6e22e">Create</span>(<span style="color:#e6db74">&#34;localhost&#34;</span>, <span style="color:#ae81ff">8080</span>).<span style="color:#a6e22e">WithProtocol</span>(<span style="color:#e6db74">&#34;udp&#34;</span>).<span style="color:#a6e22e">WithTimeout</span>(<span style="color:#ae81ff">30</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>).<span style="color:#a6e22e">Build</span>()
+</span></span></code></pre></div><p>上面这样的方式也很清楚，不需要额外的Config，使用链式的函数调用的方式来构造一个对象，只需要多加一个Builder。如果想省掉这个包装的结构体，那么就可以使用 <code>Functional Options</code> 来实现</p>
+<h4 id="functional-options">Functional Options</h4>
+<p>首先，我们先定义一个函数类型，然后，我们可以使用函数式的方式定义一组函数：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Option</span> <span style="color:#66d9ef">func</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithProtocol</span>(<span style="color:#a6e22e">p</span> <span style="color:#66d9ef">string</span>) <span style="color:#a6e22e">Option</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Protocol</span> = <span style="color:#a6e22e">p</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithTimeout</span>(<span style="color:#a6e22e">timeout</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>) <span style="color:#a6e22e">Option</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Timeout</span> = <span style="color:#a6e22e">timeout</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithMaxConns</span>(<span style="color:#a6e22e">maxConns</span> <span style="color:#66d9ef">int</span>) <span style="color:#a6e22e">Option</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">MaxConns</span> = <span style="color:#a6e22e">maxConns</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithTLS</span>(<span style="color:#a6e22e">tlsConf</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>) <span style="color:#a6e22e">Option</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">TLS</span> = <span style="color:#a6e22e">tls</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>上面这组代码传入一个参数，然后返回一个函数，返回的这个函数会设置自己的 <code>Server</code> 函数，例如：</p>
+<blockquote>
+<p>当我们调用其中一个函数使用 <code>MaxConns(30)</code> 时，它的返回值是一个 <code>func(s *Server) { s.MaxConns = 30}</code> 的函数</p>
+</blockquote>
+<p>这个叫做<code>高阶函数</code>，在数学上，就好像以下这样的数学定义：</p>
+<ul>
+<li>计算长方形面积的公式为：<code>rect(w, h) = w * h</code></li>
+<li>这个函数我们包装一下，就可以变成计算正方形面积的公式：<code>square(w) = rect(w, w)</code></li>
+</ul>
+<p>现在，我们在定义一个 <code>NewServer</code> 的函数，其中一个可变参数 <code>options</code> 可以传入上面的函数，然后使用 <code>for-loop</code> 来设置我们需要的 <code>Server</code> 对象：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewServer</span>(<span style="color:#a6e22e">addr</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">port</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">opts</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">Option</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">srv</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Server</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Addr</span>: <span style="color:#a6e22e">addr</span>, <span style="color:#a6e22e">Port</span>: <span style="color:#a6e22e">port</span>, <span style="color:#a6e22e">Protocol</span>: <span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">Timeout</span>: <span style="color:#ae81ff">30</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>, <span style="color:#a6e22e">MaxConns</span>: <span style="color:#ae81ff">1024</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">TLS</span>: <span style="color:#66d9ef">nil</span>,
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">opt</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">options</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">opt</span>(<span style="color:#a6e22e">srv</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">srv</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>于是，我们在创建 <code>Server</code> 的时候，我们就可以这样：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">srv1</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewServer</span>(<span style="color:#e6db74">&#34;localhost&#34;</span>, <span style="color:#ae81ff">9001</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">srv2</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewServer</span>(<span style="color:#e6db74">&#34;localhost&#34;</span>, <span style="color:#ae81ff">9001</span>, <span style="color:#a6e22e">WithProtocol</span>(<span style="color:#e6db74">&#34;udp&#34;</span>))
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">srv3</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewServer</span>(<span style="color:#e6db74">&#34;localhost&#34;</span>, <span style="color:#ae81ff">9001</span>, <span style="color:#a6e22e">WithTimeout</span>(<span style="color:#ae81ff">5</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>), <span style="color:#a6e22e">WithMaxConns</span>(<span style="color:#ae81ff">1024</span>))
+</span></span></code></pre></div><p>这样的方式，不但解决了使用 <code>Config</code> 方式时需要有一个config参数，但在不需要的时候，是放 <code>nil</code> 还是 <code>Config{}</code> 的选择困难，也不需要引用一个 <code>Builder</code> 的控制对象，直接使用函数式编程的方式，在代码阅读上也比较优雅。</p>
+<p><code>Functional Options</code> 方式至少可以带来以下好处：</p>
+<ul>
+<li>直觉式的编程</li>
+<li>高度的可配置化</li>
+<li>很容易维护和扩展</li>
+<li>自文档</li>
+<li>对于团队新人来说很容易上手</li>
+<li>没有令人困惑的事，如需要判断<code>nil</code>或<code>empty</code></li>
+</ul>
+</section>
+
+  
+  
+  <footer class="mt-12 flex flex-wrap">
+     
+    <a
+      class="mr-1.5 mb-1.5 rounded-lg bg-black/[3%] px-4 py-2 no-underline dark:bg-white/[8%]"
+      href="/tags/golang"
+      >golang</a
+    >
+     
+    <a
+      class="mr-1.5 mb-1.5 rounded-lg bg-black/[3%] px-4 py-2 no-underline dark:bg-white/[8%]"
+      href="/tags/design-pattern"
+      >design pattern</a
+    >
+    
+  </footer>
+  
+
+  
+  
+  
+
+  
+  
+</article>
+
+
+    </main>
+
+    <footer class="opaco mx-auto flex h-[5rem] max-w-3xl items-center px-8 text-[0.9em] opacity-60">
+  <div class="mr-auto">
+    &copy; 2022
+    <a class="link" href="/">ZimmerWen</a>
+  </div>
+  <a class="link mx-6" href="https://gohugo.io/" rel="noopener" target="_blank">Powered by Hugo️️</a
+  >️
+  <a class="link" href="https://github.com/nanxiaobei/hugo-paper" rel="noopener" target="_blank"
+    >▷ Paper 6</a
+  >
+</footer>
+
+  </body>
+</html>
