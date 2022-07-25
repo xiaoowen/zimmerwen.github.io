@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="not-ready text-sm lg:text-base" lang="zh-CN">
+  <head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+  
+  <title>Php 进程异常退出导致 502 的问题排查 - ZimmerWen</title>
+
+  
+  <meta name="theme-color" />
+  
+  <meta name="description" content="502 是什么？
+ The server, while acting as a gateway or proxy, received an invaild response from the upstream server it accessed in attempting to fulfill the request.
+ 从概念上来看：上游服务无响应导致 502，那什么是上游服务？以 LNMP 架构为例，MySQL 是 Php 的上游服务，Php 是 Nginx 的上游服务。一般情况下，发生 502 都不是 Nginx 的问题，问题主要集中在上游服务 Php 中，进程数的设置、内存设置、超时设置等都可能会导致 502。
+我们可以先看看整个请求流程中，哪里出问题可能会出现 502？
+从路径上来看，发生 502 有两大类场景：
+ Nginx 服务不可用；负载均衡通过健康检查发现上游服务不可用，会直接返回 502，不会转发请求到后端服务 fpm 异常；Nginx 接收不到上游服务 Php 的返回，会返回 502  回到线上业务现象，只有某个特定的接口出现了 502，只要一访问就会 502，但是其他接口是好的。这样的现象就比较诡异，通常我们碰到的 502 都是整体服务不可用导致或者偶发的不同业务 502，与我们出现的现象都不一样。那么我们如何定位呢？
+  从主要路径排查，排查路径" />
+  <meta name="author" content="" />
+  
+
+  
+  
+  
+  
+  
+  
+  <link rel="preload stylesheet" as="style" href="/main.min.css" />
+
+  
+  <script
+    defer
+    src="/highlight.min.js"
+    onload="hljs.initHighlightingOnLoad();"
+  ></script>
+  
+
+  
+  <link
+    rel="preload"
+    as="image"
+    href="/theme.%7B%7B%20if%20site.Params.monoDarkIcon%20%7D%7Dsvg%7B%7B%20else%20%7D%7Dpng%7B%7B%20end%20%7D%7D"
+  />
+
+  
+  
+  
+  
+
+  
+
+  
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  
+  <meta name="generator" content="Hugo 0.97.3" />
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <meta property="og:title" content="Php 进程异常退出导致 502 的问题排查" />
+<meta property="og:description" content="502 是什么？
+ The server, while acting as a gateway or proxy, received an invaild response from the upstream server it accessed in attempting to fulfill the request.
+ 从概念上来看：上游服务无响应导致 502，那什么是上游服务？以 LNMP 架构为例，MySQL 是 Php 的上游服务，Php 是 Nginx 的上游服务。一般情况下，发生 502 都不是 Nginx 的问题，问题主要集中在上游服务 Php 中，进程数的设置、内存设置、超时设置等都可能会导致 502。
+我们可以先看看整个请求流程中，哪里出问题可能会出现 502？
+从路径上来看，发生 502 有两大类场景：
+ Nginx 服务不可用；负载均衡通过健康检查发现上游服务不可用，会直接返回 502，不会转发请求到后端服务 fpm 异常；Nginx 接收不到上游服务 Php 的返回，会返回 502  回到线上业务现象，只有某个特定的接口出现了 502，只要一访问就会 502，但是其他接口是好的。这样的现象就比较诡异，通常我们碰到的 502 都是整体服务不可用导致或者偶发的不同业务 502，与我们出现的现象都不一样。那么我们如何定位呢？
+  从主要路径排查，排查路径" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/posts/php-%E8%BF%9B%E7%A8%8B%E5%BC%82%E5%B8%B8%E9%80%80%E5%87%BA%E5%AF%BC%E8%87%B4502%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-07-25T20:01:00+08:00" />
+<meta property="article:modified_time" content="2022-07-25T20:01:00+08:00" />
+
+
+  
+  <meta itemprop="name" content="Php 进程异常退出导致 502 的问题排查">
+<meta itemprop="description" content="502 是什么？
+ The server, while acting as a gateway or proxy, received an invaild response from the upstream server it accessed in attempting to fulfill the request.
+ 从概念上来看：上游服务无响应导致 502，那什么是上游服务？以 LNMP 架构为例，MySQL 是 Php 的上游服务，Php 是 Nginx 的上游服务。一般情况下，发生 502 都不是 Nginx 的问题，问题主要集中在上游服务 Php 中，进程数的设置、内存设置、超时设置等都可能会导致 502。
+我们可以先看看整个请求流程中，哪里出问题可能会出现 502？
+从路径上来看，发生 502 有两大类场景：
+ Nginx 服务不可用；负载均衡通过健康检查发现上游服务不可用，会直接返回 502，不会转发请求到后端服务 fpm 异常；Nginx 接收不到上游服务 Php 的返回，会返回 502  回到线上业务现象，只有某个特定的接口出现了 502，只要一访问就会 502，但是其他接口是好的。这样的现象就比较诡异，通常我们碰到的 502 都是整体服务不可用导致或者偶发的不同业务 502，与我们出现的现象都不一样。那么我们如何定位呢？
+  从主要路径排查，排查路径"><meta itemprop="datePublished" content="2022-07-25T20:01:00+08:00" />
+<meta itemprop="dateModified" content="2022-07-25T20:01:00+08:00" />
+<meta itemprop="wordCount" content="203">
+<meta itemprop="keywords" content="php,Troubleshooting," />
+  
+  <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Php 进程异常退出导致 502 的问题排查"/>
+<meta name="twitter:description" content="502 是什么？
+ The server, while acting as a gateway or proxy, received an invaild response from the upstream server it accessed in attempting to fulfill the request.
+ 从概念上来看：上游服务无响应导致 502，那什么是上游服务？以 LNMP 架构为例，MySQL 是 Php 的上游服务，Php 是 Nginx 的上游服务。一般情况下，发生 502 都不是 Nginx 的问题，问题主要集中在上游服务 Php 中，进程数的设置、内存设置、超时设置等都可能会导致 502。
+我们可以先看看整个请求流程中，哪里出问题可能会出现 502？
+从路径上来看，发生 502 有两大类场景：
+ Nginx 服务不可用；负载均衡通过健康检查发现上游服务不可用，会直接返回 502，不会转发请求到后端服务 fpm 异常；Nginx 接收不到上游服务 Php 的返回，会返回 502  回到线上业务现象，只有某个特定的接口出现了 502，只要一访问就会 502，但是其他接口是好的。这样的现象就比较诡异，通常我们碰到的 502 都是整体服务不可用导致或者偶发的不同业务 502，与我们出现的现象都不一样。那么我们如何定位呢？
+  从主要路径排查，排查路径"/>
+
+  
+  
+</head>
+
+  <body class="text-black duration-200 ease-out dark:text-white">
+    <header class="mx-auto flex h-[5rem] max-w-3xl px-8 lg:justify-center">
+  <div class="relative z-50 mr-auto flex items-center">
+    <a class="-translate-x-[1px] -translate-y-0.5 text-3xl font-bold" href="/"
+      >ZimmerWen</a
+    >
+    <a
+      class="btn-dark ml-6 h-6 w-6 shrink-0 cursor-pointer [background:url(./theme.png)_left_center/_auto_theme('spacing.6')_no-repeat] [transition:_background-position_0.4s_steps(5)] dark:[background-position:right]"
+    ></a>
+  </div>
+
+  <a
+    class="btn-menu relative z-50 -mr-8 flex h-[5rem] w-[5rem] shrink-0 cursor-pointer flex-col items-center justify-center gap-2.5 lg:hidden"
+  ></a>
+
+  <script>
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    const htmlClass = document.documentElement.classList;
+    setTimeout(() => htmlClass.remove('not-ready'), 10);
+
+    const setDark = (newDark) => {
+      metaTheme.setAttribute('content', newDark ? '#000' : '#fbfbfb');
+      htmlClass[newDark ? 'add' : 'remove']('dark');
+      localStorage.setItem('dark', newDark);
+    };
+
+    
+    const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+    const darkVal = localStorage.getItem('dark');
+    setDark(darkVal ? darkVal === 'true' : darkScheme.matches);
+
+    
+    darkScheme.addEventListener('change', (event) => {
+      setDark(event.matches);
+    });
+
+    
+    const btnDark = document.querySelector('.btn-dark');
+    btnDark.addEventListener('click', () => {
+      setDark(localStorage.getItem('dark') !== 'true');
+    });
+
+    
+    const btnMenu = document.querySelector('.btn-menu');
+    btnMenu.addEventListener('click', () => {
+      htmlClass.toggle('open');
+    });
+  </script>
+
+  <div
+    class="nav-wrapper fixed inset-x-0 top-full z-40 flex h-full select-none flex-col justify-center pb-16 duration-200 dark:bg-black lg:static lg:h-auto lg:flex-row lg:!bg-transparent lg:pb-0 lg:transition-none"
+  >
+    
+    
+
+    
+  </div>
+</header>
+
+
+    <main
+      class="prose prose-neutral relative mx-auto min-h-[calc(100%-10rem)] max-w-3xl px-8 pt-20 pb-32 dark:prose-invert"
+    >
+      
+
+<article>
+  <header class="mb-20">
+    <h1 class="!my-0 pb-2">Php 进程异常退出导致 502 的问题排查</h1>
+
+    
+    <div class="text-[0.9em] opacity-70">
+      
+      <time>Jul 25, 2022</time>
+      
+      
+    </div>
+    
+  </header>
+
+  <section><p>502 是什么？</p>
+<blockquote>
+<p>The server, while acting as a gateway or proxy, received an invaild response from the upstream server it accessed in attempting to fulfill the request.</p>
+</blockquote>
+<p>从概念上来看：上游服务无响应导致 502，那什么是上游服务？以 LNMP 架构为例，MySQL 是 Php 的上游服务，Php 是 Nginx 的上游服务。一般情况下，发生 502 都不是 Nginx 的问题，问题主要集中在上游服务 Php 中，进程数的设置、内存设置、超时设置等都可能会导致 502。</p>
+<p>我们可以先看看整个请求流程中，哪里出问题可能会出现 502？</p>
+<p><img src="/posts/assets/1597114659188-57c2897b-a0a5-4f8c-a5e5-5e82e268f7a5.png" alt="image.png"></p>
+<p>从路径上来看，发生 502 有两大类场景：</p>
+<ul>
+<li>Nginx 服务不可用；负载均衡通过健康检查发现上游服务不可用，会直接返回 502，不会转发请求到后端服务</li>
+<li>fpm 异常；Nginx 接收不到上游服务 Php 的返回，会返回 502</li>
+</ul>
+<p>回到线上业务现象，只有某个特定的接口出现了 502，只要一访问就会 502，但是其他接口是好的。这样的现象就比较诡异，通常我们碰到的 502 都是整体服务不可用导致或者偶发的不同业务 502，与我们出现的现象都不一样。那么我们如何定位呢？</p>
+<ul>
+<li>
+<p>从主要路径排查，排查路径</p>
+<ul>
+<li>根据现象，我们可以首先排除 Nginx 的问题</li>
+<li>其次是 fpm 的问题，因为之前线上没有出现配置导致 502 的问题，并且其他的接口访问都是正常的，与我们的场景不一致，也可以排除是 fpm 配置的问题</li>
+<li>Nginx 与 fpm 配置均无更新，无异常， ECS实例也没有任何异常，确认了运行环境没有任何变动与问题存在，这个时候我们通常可以猜测是代码的问题</li>
+</ul>
+<p>我们猜测 <code>代码的问题导致了 fpm 进程异常退出</code>，从而导致特定接口出现了 502，但其他接口都是好的。那如何验证我们的这个猜测呢？</p>
+</li>
+<li>
+<p>看日志</p>
+<p>fpm 进程异常退出，一般情况下都是有日志输出的，首先我们可以查看 fpm 日志：</p>
+<blockquote>
+<p>WARNING: [pool www] child 30296 exited on signal 11 (SIGSEGV) after 136.678208 seconds from start</p>
+</blockquote>
+<p>从 fpm 日志可以看到进程是执行了一个<code>无效的内存引用</code>而退出的。我们可以继续查看 <code>/var/log/message</code> 日志，确认一下原因：</p>
+<p><img src="/posts/assets/1596527019563-9c0954aa-53e3-4791-aed4-14be25259ed0.png" alt="image.png"></p>
+<p>发生 502 的时候都有对应的日志，从日志信息中可以看到是<code>内存访问越界</code>导致的。</p>
+<p><code>/var/log/message</code> 日志中 error 后面的数字是比较有用的，上面的 4，转换成二进制就是 100，可以根据以下解释来查看具体含义。</p>
+<blockquote>
+<p>bit2: 值为 1 表示是用户态程序内存访问越界，值为 0 表示内核态程序内存访问越界</p>
+<p>bit1: 值为 1 表示是写操作导致内存访问越界，值为 0 表示读操作导致内存访问越界</p>
+<p>bit0: 值为 1 表示没有足够的权限访问非法地址的内容，值为 0 表示访问的非法地址根本没有对应的页面，也就是无效地址</p>
+</blockquote>
+<p>所以，出现问题的根本原因就是<code>用户态度读取的内存地址无效</code>。</p>
+<p>结合 fpm 的日志，我们可以通过以下两种方式来定位具体问题所在：</p>
+<ul>
+<li>
+<p>直接看代码；因为是特定的接口，我们只需要查看该接口的代码。因为是新代码上线后导致的问题，这样看变更代码可以更快速的定位问题。我们遇到的问题是yaf框架的问题，复现代码及环境如下：</p>
+<blockquote>
+<p>CentOS Linux release 7.6.1810(core)</p>
+<p>Php 7.1.12</p>
+<p>Yaf 3.0.7</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#f92672">&lt;?</span><span style="color:#a6e22e">php</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Test502Controller</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Controller</span> {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">testRunAction</span>() {
+</span></span><span style="display:flex;"><span>        $productId <span style="color:#f92672">=</span> $_REQUEST[<span style="color:#e6db74">&#39;product_id&#39;</span>];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        $params <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;timestamp&#39;</span> <span style="color:#f92672">=&gt;</span> <span style="color:#a6e22e">time</span>(),
+</span></span><span style="display:flex;"><span>        ];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        $this<span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">mergeArr</span>($params, $_REQUEST);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 此处使用$this-&gt;post()或$_REQUEST是正常的，不会发生502
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        $regionId <span style="color:#f92672">=</span> $this<span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">request</span>(<span style="color:#e6db74">&#39;region_id&#39;</span>, <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">var_dump</span>($productId, $regionId);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">mergeArr</span>(<span style="color:#66d9ef">array</span> $params <span style="color:#f92672">=</span> [], <span style="color:#66d9ef">array</span> <span style="color:#f92672">&amp;</span>$merger <span style="color:#f92672">=</span> [])<span style="color:#f92672">:</span><span style="color:#a6e22e">void</span>  {
+</span></span><span style="display:flex;"><span>        $data <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>$merger;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        $data <span style="color:#f92672">=</span> <span style="color:#a6e22e">array_merge</span>($data, $params);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div></li>
+<li>
+<p>core dump；适用于偶发性的不确定的进程异常退出，我们可以从core文件中看到整个调用，进而定位到问题所在</p>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+
+  
+  
+  <footer class="mt-12 flex flex-wrap">
+     
+    <a
+      class="mr-1.5 mb-1.5 rounded-lg bg-black/[3%] px-4 py-2 no-underline dark:bg-white/[8%]"
+      href="/tags/php"
+      >php</a
+    >
+     
+    <a
+      class="mr-1.5 mb-1.5 rounded-lg bg-black/[3%] px-4 py-2 no-underline dark:bg-white/[8%]"
+      href="/tags/troubleshooting"
+      >Troubleshooting</a
+    >
+    
+  </footer>
+  
+
+  
+  
+  
+  <nav class="mt-24 flex rounded-lg bg-black/[3%] text-lg dark:bg-white/[8%]">
+    
+    
+    <a
+      class="ml-auto flex w-1/2 items-center justify-end p-6 pl-3 font-bold no-underline"
+      href="/posts/golang-%E4%B8%AD%E5%BA%94%E7%94%A8-functional-options/"
+      ><span>Golang 中应用 Functional Options 模式</span><span class="ml-1.5">→</span></a
+    >
+    
+  </nav>
+  
+
+  
+  
+</article>
+
+
+    </main>
+
+    <footer class="opaco mx-auto flex h-[5rem] max-w-3xl items-center px-8 text-[0.9em] opacity-60">
+  <div class="mr-auto">
+    &copy; 2022
+    <a class="link" href="/">ZimmerWen</a>
+  </div>
+  <a class="link mx-6" href="https://gohugo.io/" rel="noopener" target="_blank">Powered by Hugo️️</a
+  >️
+  <a class="link" href="https://github.com/nanxiaobei/hugo-paper" rel="noopener" target="_blank"
+    >▷ Paper 6</a
+  >
+</footer>
+
+  </body>
+</html>

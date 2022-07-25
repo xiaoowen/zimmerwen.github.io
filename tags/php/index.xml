@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>ZimmerWen</title>
-    <link>/</link>
-    <description>Recent content on ZimmerWen</description>
+    <title>php on ZimmerWen</title>
+    <link>/tags/php/</link>
+    <description>Recent content in php on ZimmerWen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <lastBuildDate>Mon, 25 Jul 2022 20:01:00 +0800</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 25 Jul 2022 20:01:00 +0800</lastBuildDate><atom:link href="/tags/php/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Php 进程异常退出导致 502 的问题排查</title>
       <link>/posts/php-%E8%BF%9B%E7%A8%8B%E5%BC%82%E5%B8%B8%E9%80%80%E5%87%BA%E5%AF%BC%E8%87%B4502%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/</link>
@@ -20,19 +20,6 @@
 从路径上来看，发生 502 有两大类场景：
  Nginx 服务不可用；负载均衡通过健康检查发现上游服务不可用，会直接返回 502，不会转发请求到后端服务 fpm 异常；Nginx 接收不到上游服务 Php 的返回，会返回 502  回到线上业务现象，只有某个特定的接口出现了 502，只要一访问就会 502，但是其他接口是好的。这样的现象就比较诡异，通常我们碰到的 502 都是整体服务不可用导致或者偶发的不同业务 502，与我们出现的现象都不一样。那么我们如何定位呢？
   从主要路径排查，排查路径</description>
-    </item>
-    
-    <item>
-      <title>Golang 中应用 Functional Options 模式</title>
-      <link>/posts/golang-%E4%B8%AD%E5%BA%94%E7%94%A8-functional-options/</link>
-      <pubDate>Wed, 20 Jul 2022 14:18:00 +0800</pubDate>
-      
-      <guid>/posts/golang-%E4%B8%AD%E5%BA%94%E7%94%A8-functional-options/</guid>
-      <description>Functional Options 是一个函数式编程的应用案例，编程技巧也很好，是目前在go语言中最流行的一种编程模式。在grpc的源码中有大量的应用。
-要解决什么问题 配置选项问题 在编程中，我们会经常需要对一个对象进行相关的配置，比如：
-type Server struct {  Addr string  Port int  Protocol string  Timeout time.Duration  MaxConns int  TLS *tls.Config } 在这个Server对象中，我们可以看到：
- 要有监听的ip地址 addr 和端口号 Port，这两个配置选项是必须的 还有 Protocol、 Timeout、 MaxConns 字段，这几个字短是不能为空的，但有默认值：协议是tcp，超时时间30秒和最大连结束1024个 还有 TLS 这个是安全链接，需要配置相关的证书和私钥。这个是可以为空的  所以，针对与上述这样的配置，因为go语言不支持重载函数，所以不得不用不同的函数来应对不同的配置创建Server的函数，如：
-func NewDefaultServer(addr string, port int) (*Server, error) {  return &amp;amp;Server{  Addr: addr, Port: port,  Protocol: &amp;#34;tcp&amp;#34;, Timeout: 30*time.Second, MaxConns: 1024  TLS: nil  }, nil }  func NewTLSServer(addr string, port int, tlsConf *tls.</description>
     </item>
     
   </channel>

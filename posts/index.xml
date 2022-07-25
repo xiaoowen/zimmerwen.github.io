@@ -6,9 +6,24 @@
     <description>Recent content in Posts on ZimmerWen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <lastBuildDate>Wed, 20 Jul 2022 14:18:00 +0800</lastBuildDate><atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 25 Jul 2022 20:01:00 +0800</lastBuildDate><atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Golang中应用Functional Options模式</title>
+      <title>Php 进程异常退出导致 502 的问题排查</title>
+      <link>/posts/php-%E8%BF%9B%E7%A8%8B%E5%BC%82%E5%B8%B8%E9%80%80%E5%87%BA%E5%AF%BC%E8%87%B4502%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/</link>
+      <pubDate>Mon, 25 Jul 2022 20:01:00 +0800</pubDate>
+      
+      <guid>/posts/php-%E8%BF%9B%E7%A8%8B%E5%BC%82%E5%B8%B8%E9%80%80%E5%87%BA%E5%AF%BC%E8%87%B4502%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/</guid>
+      <description>502 是什么？
+ The server, while acting as a gateway or proxy, received an invaild response from the upstream server it accessed in attempting to fulfill the request.
+ 从概念上来看：上游服务无响应导致 502，那什么是上游服务？以 LNMP 架构为例，MySQL 是 Php 的上游服务，Php 是 Nginx 的上游服务。一般情况下，发生 502 都不是 Nginx 的问题，问题主要集中在上游服务 Php 中，进程数的设置、内存设置、超时设置等都可能会导致 502。
+我们可以先看看整个请求流程中，哪里出问题可能会出现 502？
+从路径上来看，发生 502 有两大类场景：
+ Nginx 服务不可用；负载均衡通过健康检查发现上游服务不可用，会直接返回 502，不会转发请求到后端服务 fpm 异常；Nginx 接收不到上游服务 Php 的返回，会返回 502  回到线上业务现象，只有某个特定的接口出现了 502，只要一访问就会 502，但是其他接口是好的。这样的现象就比较诡异，通常我们碰到的 502 都是整体服务不可用导致或者偶发的不同业务 502，与我们出现的现象都不一样。那么我们如何定位呢？
+  从主要路径排查，排查路径</description>
+    </item>
+    
+    <item>
+      <title>Golang 中应用 Functional Options 模式</title>
       <link>/posts/golang-%E4%B8%AD%E5%BA%94%E7%94%A8-functional-options/</link>
       <pubDate>Wed, 20 Jul 2022 14:18:00 +0800</pubDate>
       

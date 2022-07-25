@@ -2,6 +2,24 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>/tags/php/</loc>
+    <lastmod>2022-07-25T20:01:00+08:00</lastmod>
+  </url><url>
+    <loc>/posts/php-%E8%BF%9B%E7%A8%8B%E5%BC%82%E5%B8%B8%E9%80%80%E5%87%BA%E5%AF%BC%E8%87%B4502%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/</loc>
+    <lastmod>2022-07-25T20:01:00+08:00</lastmod>
+  </url><url>
+    <loc>/posts/</loc>
+    <lastmod>2022-07-25T20:01:00+08:00</lastmod>
+  </url><url>
+    <loc>/tags/</loc>
+    <lastmod>2022-07-25T20:01:00+08:00</lastmod>
+  </url><url>
+    <loc>/tags/troubleshooting/</loc>
+    <lastmod>2022-07-25T20:01:00+08:00</lastmod>
+  </url><url>
+    <loc>/</loc>
+    <lastmod>2022-07-25T20:01:00+08:00</lastmod>
+  </url><url>
     <loc>/tags/design-pattern/</loc>
     <lastmod>2022-07-20T14:18:00+08:00</lastmod>
   </url><url>
@@ -9,15 +27,6 @@
     <lastmod>2022-07-20T14:18:00+08:00</lastmod>
   </url><url>
     <loc>/posts/golang-%E4%B8%AD%E5%BA%94%E7%94%A8-functional-options/</loc>
-    <lastmod>2022-07-20T14:18:00+08:00</lastmod>
-  </url><url>
-    <loc>/posts/</loc>
-    <lastmod>2022-07-20T14:18:00+08:00</lastmod>
-  </url><url>
-    <loc>/tags/</loc>
-    <lastmod>2022-07-20T14:18:00+08:00</lastmod>
-  </url><url>
-    <loc>/</loc>
     <lastmod>2022-07-20T14:18:00+08:00</lastmod>
   </url><url>
     <loc>/categories/</loc>
