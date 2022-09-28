@@ -215,7 +215,7 @@
 </blockquote>
 <p>从概念上来看：上游服务无响应导致 502，那什么是上游服务？以 LNMP 架构为例，MySQL 是 Php 的上游服务，Php 是 Nginx 的上游服务。一般情况下，发生 502 都不是 Nginx 的问题，问题主要集中在上游服务 Php 中，进程数的设置、内存设置、超时设置等都可能会导致 502。</p>
 <p>我们可以先看看整个请求流程中，哪里出问题可能会出现 502？</p>
-<p><img src="/posts/assets/1597114659188-57c2897b-a0a5-4f8c-a5e5-5e82e268f7a5.png" alt="image.png"></p>
+<p><img src="static/images/1597114659188-57c2897b-a0a5-4f8c-a5e5-5e82e268f7a5.png" alt="image.png"></p>
 <p>从路径上来看，发生 502 有两大类场景：</p>
 <ul>
 <li>Nginx 服务不可用；负载均衡通过健康检查发现上游服务不可用，会直接返回 502，不会转发请求到后端服务</li>
@@ -239,7 +239,7 @@
 <p>WARNING: [pool www] child 30296 exited on signal 11 (SIGSEGV) after 136.678208 seconds from start</p>
 </blockquote>
 <p>从 fpm 日志可以看到进程是执行了一个<code>无效的内存引用</code>而退出的。我们可以继续查看 <code>/var/log/message</code> 日志，确认一下原因：</p>
-<p><img src="/posts/assets/1596527019563-9c0954aa-53e3-4791-aed4-14be25259ed0.png" alt="image.png"></p>
+<p><img src="static/images/1596527019563-9c0954aa-53e3-4791-aed4-14be25259ed0.png" alt="image.png"></p>
 <p>发生 502 的时候都有对应的日志，从日志信息中可以看到是<code>内存访问越界</code>导致的。</p>
 <p><code>/var/log/message</code> 日志中 error 后面的数字是比较有用的，上面的 4，转换成二进制就是 100，可以根据以下解释来查看具体含义。</p>
 <blockquote>
@@ -313,6 +313,10 @@
   
   
   <nav class="mt-24 flex rounded-lg bg-black/[3%] text-lg dark:bg-white/[8%]">
+    
+    <a class="flex w-1/2 items-center p-6 pr-3 font-bold no-underline" href="/posts/%E5%A6%82%E4%BD%95%E5%BC%80%E5%A7%8B%E5%BC%80%E5%B1%95%E6%8A%80%E6%9C%AF%E4%BC%98%E5%8C%96%E5%B7%A5%E4%BD%9C/"
+      ><span class="mr-1.5">←</span><span>如何开始开展技术优化</span></a
+    >
     
     
     <a
